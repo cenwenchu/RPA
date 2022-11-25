@@ -14,7 +14,11 @@ LogError(exception) {
 Menu, WechatMenu, Add, &发送聊天消息, SendWechatMessage
 Menu, WechatMenu, Add, &分析聊天记录, AnalysisWechatMessage
 
-Menu, MyMenuBar, Add, &操作命令, :WechatMenu
+Menu, DingTalkMenu, Add, &发送聊天消息, SendWechatMessage
+Menu, DingTalkMenu, Add, &分析聊天记录, AnalysisWechatMessage
+
+Menu, MyMenuBar, Add, 【微信自动化】, :WechatMenu
+Menu, MyMenuBar, Add, 【钉订自动化】, :DingTalkMenu
 
 ; 添加菜单栏到窗口:
 Gui, Menu, MyMenuBar
@@ -42,7 +46,7 @@ Button保存配置:
 GuiControlGet, MessageProcessCount
 GuiControlGet, chatId
 if(CheckInput(chatId,MessageProcessCount,SelectedFile,RES_PATH))
-    MsgBox,配置已经保存好，可以点击【菜单】-【操作命令】执行微信自动化
+    MsgBox,配置已经保存好，可以点击【菜单】-【微信自动化】执行微信自动化
 ;initWechatApp("chat")
 return
 
