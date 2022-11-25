@@ -19,6 +19,7 @@ Menu, DingTalkMenu, Add, &分析聊天记录, AnalysisWechatMessage
 
 Menu, MyMenuBar, Add, 【微信自动化】, :WechatMenu
 Menu, MyMenuBar, Add, 【钉订自动化】, :DingTalkMenu
+Menu, MyMenuBar, Add, 【千牛自动化】, :DingTalkMenu
 
 ; 添加菜单栏到窗口:
 Gui, Menu, MyMenuBar
