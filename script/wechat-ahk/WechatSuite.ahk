@@ -171,7 +171,6 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
     newPosX := 230 
     newPosY := height-5
 
-    ; BlockInput, MouseMove
 
     ; reg_rule = (13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8} ;正则表达式电话号码
     ; save_filepath := "\\Mac\Home\Desktop\脚本\统计数据\wechatInfo.txt"
@@ -208,14 +207,14 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
      {
        MouseClick, left, newPosX, newPosY+step, 2
          
-        ; MsgBox, contents before: %text%
+        ;MsgBox, contents before: %text%
         Send ^c
         Sleep 500
         text := clipboard
         clipboard := ""  ; Start off empty to allow ClipWait to detect when the text has arrived.
         
        
-        ; MsgBox, contents after: %text%
+        ;MsgBox, contents after: %text%
         ; MouseGetPos, xpos, ypos 
        ; MsgBox, The cursor is at X%xpos% Y%ypos%
      
@@ -377,8 +376,6 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
      }
     }
 
-        
-    ; BlockInput, MouseMoveOff
     Sleep 5000
 
     totalCount := 0

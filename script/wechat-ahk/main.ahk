@@ -1,13 +1,37 @@
 ﻿#Include WechatSuite.ahk
 #Include config.ahk
 
-
 ; 异常记录日志的配置
 OnError("LogError")
 LogError(exception) {
+    
+    error_log := A_ScriptDir
+    
+    if (InStr(error_log, "\") > 0)
+        error_log := error_log . "\errorlog.txt"
+    else
+        error_log := error_log . "/errorlog.txt"     
+    
     FileAppend % "Error on line " exception.Line ": " exception.Message "`n"
-        , "errorlog.txt"
+        , error_log 
+        
+        
     return true
+}
+
+;配置资源目录、聊天记录分析后的存储文件
+res_dir := A_ScriptDir
+resultFile := A_ScriptDir
+    
+if (InStr(A_ScriptDir, "\") > 0)
+{
+   WechatConfig.RES_PATH := res_dir . "\res\" 
+   resultFile := resultFile . "\微信分析结果文件.txt" 
+}
+else
+{
+   WechatConfig.RES_PATH := res_dir . "/res/" 
+   resultFile := resultFile . "/微信分析结果文件.txt" 
 }
 
 ;应用的一些基础配置填入
@@ -20,153 +44,107 @@ Menu, MyMenuBar, Add, 【微信自动化】, :WechatMenu
 Gui, Menu, MyMenuBar
 
 Gui, +Resize  ; 让用户可以调整窗口的大小.
-Gui, Add, Text,section R1, 请输入需要自动化的好友或者群名称:
-Gui, Add, Text,R1, 请输入需要发送的聊天内容:
-Gui, Add, Text,R1, 请输入需要处理的聊天记录数量:
-Gui, Add, Text,R1, 请输入聊天记录保存文件地址:
-Gui, Add, Button,R1, 选择保存地址
-Gui, Add, Text,R1, 请输入资源文件地址:
-Gui, Add, Button, R1, 选择资源文件地址
-Gui, Add, Edit,ys w100 vchatId,测试群
-Gui, Add, Edit,w100 vchatMessage,欢迎你来杭州~
+Gui, Add, Text,section R1, 请输入-好友或者群名称:
+Gui, Add, Text,R3, 请输入-自动发送的聊天内容（文字）:
+Gui, Add, Text,R1, 请输入-分析聊天的数量:
+Gui, Add, Text,R2, 请输入-分析聊天包含的关键词:
+
+Gui, Add, Edit,ys w200 vchatId
+Gui, Add, Edit,R3 w300 vchatMessage,欢迎你来杭州~
 Gui, Add, Edit,w100 vMessageProcessCount,10
-Gui, Add, Edit, R3 ReadOnly vSaveFile
-Gui, Add, Edit, R3 ReadOnly vResFile
+Gui, Add, Edit,R2 w300 vMessageKeyWords,手机号码
 
-
-Gui, Add, Button, Default w80 R1, 保存配置 
 Gui, Show
+
+^x::ExitApp
 
 return 
 
-;确定配置后，启动分析微信聊天记录处理
-Button保存配置:
-
-GuiControlGet, MessageProcessCount
-GuiControlGet, chatId
-GuiControlGet, chatMessage 
-    
-if(CheckInput(chatId,MessageProcessCount,SelectedFile,RES_PATH))
-    MsgBox,配置已经保存好，可以点击【菜单】-【微信自动化】执行微信自动化
-;initWechatApp("chat")
-return
 
 AnalysisWechatMessage:
 
-GuiControlGet, MessageProcessCount
 GuiControlGet, chatId
-GuiControlGet, chatMessage 
+GuiControlGet, MessageProcessCount
+GuiControlGet, MessageKeyWords 
 
-if (CheckInput(chatId,MessageProcessCount,SelectedFile,RES_PATH))
-{  
-   initWechatApp("chat")
-   findAndClickElement("max.png",20,20,50) 
-   totalCount := ParseWechatContent(chatId,"(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}",SelectedFile,MessageProcessCount) 
-   findAndClickElement("recovery.png",20,20,50)
-   findAndClickElement("close.png",20,20,50)
+if(!chatId)
+{
+    MsgBox, 请输入需要自动化的好友或者群名称！
+    return
 }
-TrayTip 消息, 分析聊天记录结束
+
+if(!MessageProcessCount)
+    MessageProcessCount := 10
+    
+if (!MessageKeyWords)
+{
+   MessageKeyWords := ""
+}
+   
+if (MessageKeyWords != "")
+    if(MessageKeyWords == "手机号码")
+    {
+        MessageKeyWords := "(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}"
+    }
+    else
+    {
+        MessageKeyWords := ".*" . MessageKeyWords . ".*"
+    }
+ 
+initWechatApp("chat")  
+
+BlockInput, MouseMove 
+BlockInput, SendAndMouse
+
+findAndClickElement("max.png",20,20,50) 
+totalCount := ParseWechatContent(chatId,MessageKeyWords,resultFile,MessageProcessCount) 
+findAndClickElement("recovery.png",20,20,50)
+findAndClickElement("close.png",20,20,50)
+
+BlockInput, MouseMoveOff
+BlockInput, Default
+   
+TempTip := "分析聊天记录结束,符合结果 " . totalCount . " 条,已保存到:微信分析结果文件.txt"
+
+TrayTip 消息,%TempTip%
 Sleep 1000   ; 让它显示 1 秒钟.
 
 return
 
 SendWechatMessage:
 
-GuiControlGet, MessageProcessCount
 GuiControlGet, chatId
 GuiControlGet, chatMessage 
 
-if(CheckInput(chatId,MessageProcessCount,SelectedFile,RES_PATH))
+if(!chatId)
 {
-    initWechatApp("chat")
-    findAndClickElement("max.png",20,20,50) 
-    SendMessage(chatId,chatMessage) 
-    findAndClickElement("recovery.png",20,20,50)
-    findAndClickElement("close.png",20,20,50)
+    MsgBox, 请输入需要自动化的好友或者群名称！
+    return
 }
 
-TrayTip 消息, 自动发消息结束
-Sleep 1000   ; 让它显示 1 秒钟.
+if(!chatMessage)
+{
+    MsgBox, 请输入需要发送的聊天内容！
+    return
+}
+
+initWechatApp("chat")
+
+BlockInput, MouseMove 
+
+findAndClickElement("max.png",20,20,50) 
+SendMessage(chatId,chatMessage) 
+findAndClickElement("recovery.png",20,20,50)
+findAndClickElement("close.png",20,20,50)
+
+BlockInput, MouseMoveOff
     
+TrayTip 消息, 自动发消息结束
+Sleep 1000   ; 让它显示 1 秒钟.  
     
 return
 
-; 关于文件保存的配置选择
-Button选择保存地址:
-
-FileSelectFile, SelectedFile, S8, , 选择微信聊天记录保存文件, Text Documents (*.txt; *.doc)
-
-if (SelectedFile == "")
-    SelectedFile := "wechatInfo.txt"
-else
-{
-    StringGetPos, pos, SelectedFile, .txt
-    ; pos := InStr(SelectedFile,".txt")
-    
-    if (pos < 0) 
-    {
-        SelectedFile := SelectedFile . ".txt"
-    }
-}
-
-GuiControl,, SaveFile, %SelectedFile%
-
-return 
-
-; 关于资源文件的配置选择
-Button选择资源文件地址:
-
-FileSelectFolder,RES_PATH,,3, 选择资源文件地址
-
-
-if (RES_PATH != "")
-{
-    WechatConfig.RES_PATH := RES_PATH
-    
-    if (InStr(RES_PATH, "\") > 0)
-        WechatConfig.RES_PATH :=  WechatConfig.RES_PATH . "\"
-    else
-        WechatConfig.RES_PATH :=  WechatConfig.RES_PATH . "/"
-}  
-else
-    RES_PATH := WechatConfig.RES_PATH
-
-GuiControl,, ResFile, %RES_PATH%
-
-return 
 
 GuiClose:  ; 用户关闭了窗口.
 ExitApp
-
-
-CheckInput(chatId,MessageProcessCount,SelectedFile,RES_PATH)
-{
- 
-    if(!chatId)
-    {
-        MsgBox,请输入需要自动化的好友或者群名称
-        return false
-    }
-
-
-    if(!MessageProcessCount)
-    {
-        MsgBox,请输入需要处理的聊天记录数量
-        return false
-    }
-
-    if(!SelectedFile)
-    {
-        MsgBox,请选择聊天记录保存文件地址
-        return false
-    }
-
-    if(!RES_PATH)
-    {
-        MsgBox,请选择资源文件地址
-        return false
-    }
-    
-    return true
-}
 
