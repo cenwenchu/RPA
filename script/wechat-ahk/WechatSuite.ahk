@@ -1,4 +1,4 @@
-﻿#Include \\Mac\Home\Documents\GitHub\RPA\script\wechat-ahk\config.ahk
+﻿#Include config.ahk
 
 ; 激活微信App
 initWechatApp(element)
@@ -125,7 +125,22 @@ findAndClickElement(element,move_x,move_y,colorValue,x1:=0,y1:=0,x2:=0,y2:=0)
 ;定向给客户发消息
 SendMessage(chatid,message)
 {
-    
+   if !findAndClickElement("search.png",100,20,50)
+        return
+   
+   Send %chatid%
+   Sleep 1000
+   Send {Enter}
+   Sleep 1000
+   Send %message%
+   Sleep 500
+   
+   if findAndClickElement("emoji.png",20,20,50,0,1000)
+       findAndClickElement("smile.png",20,20,50)
+   
+   Send {Enter}
+   
+   return
 }
 
 ;解析微信聊天记录
@@ -366,9 +381,13 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
     ; BlockInput, MouseMoveOff
     Sleep 5000
 
+    totalCount := 0
+
     ; 保存到文件里面 
     if (save_filepath && chatContentsList.MaxIndex() && chatContentsList.MaxIndex() >0 )
     {
+    
+     totalCount := chatContentsList.MaxIndex()
      
      file := FileOpen(save_filepath, "w")
      
@@ -388,12 +407,9 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
       Sleep 1000
      }
     }
-
     
-    TrayTip 消息, 分析微信聊天记录结束
-    Sleep 1000   ; 让它显示 1 秒钟.
     WinKill, %Title%
     Sleep 1000
 
-    return
+    return totalCount
 }
