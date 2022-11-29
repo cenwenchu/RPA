@@ -123,7 +123,7 @@ findAndClickElement(element,move_x,move_y,colorValue,x1:=0,y1:=0,x2:=0,y2:=0)
 }
 
 ;定向给客户发消息
-SendMessage(chatid,message)
+SendMessage(chatid,message,attachment)
 {
    if !findAndClickElement("search.png",100,20,50)
         return
@@ -134,11 +134,29 @@ SendMessage(chatid,message)
    Sleep 1000
    Send %message%
    Sleep 500
+   Send {Enter}
    
    if findAndClickElement("emoji.png",20,20,50,0,1000)
        findAndClickElement("smile.png",20,20,50)
    
    Send {Enter}
+   Sleep 500
+   
+   if(attachment && attachment != "")
+   {
+        findAndClickElement("input-chinese.png",20,20,50,1200,1200) 
+        
+        if findAndClickElement("attachment.png",20,20,30,200,600)
+        {
+            Sleep 500
+            
+            Send %attachment%{Enter}
+            Sleep 500
+            Send {Enter}
+            ;findAndClickElement("save-file-open.png",20,20,50) 
+            
+        }
+   }
    
    return
 }
