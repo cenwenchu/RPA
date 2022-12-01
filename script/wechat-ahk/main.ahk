@@ -20,17 +20,14 @@ LogError(exception) {
 }
 
 ;配置资源目录、聊天记录分析后的存储文件
-res_dir := A_ScriptDir
 resultFile := A_ScriptDir
     
 if (InStr(A_ScriptDir, "\") > 0)
 {
-   WechatConfig.RES_PATH := res_dir . "\res\" 
    resultFile := resultFile . "\微信分析结果文件.txt" 
 }
 else
 {
-   WechatConfig.RES_PATH := res_dir . "/res/" 
    resultFile := resultFile . "/微信分析结果文件.txt" 
 }
 
@@ -123,10 +120,10 @@ initWechatApp("chat")
 BlockInput, MouseMove 
 BlockInput, Mouse
 
-findAndClickElement("max.png",20,20,50) 
+findAndClickElementWithResDic("max",0,0) 
 totalCount := ParseWechatContent(chatId,messageKeyWords,resultFile,messageProcessCount) 
-findAndClickElement("recovery.png",20,20,50)
-findAndClickElement("close.png",20,20,50)
+findAndClickElementWithResDic("recovery",0,0)
+findAndClickElementWithResDic("close",0,0)
 
 BlockInput, MouseMoveOff
 BlockInput, Default
@@ -158,17 +155,17 @@ if(!chatMessage)
 
 initWechatApp("chat")
 
-BlockInput, MouseMove
-BlockInput, Mouse
+;BlockInput, MouseMove
+;BlockInput, Mouse
 
-findAndClickElement("max.png",20,20,50) 
+findAndClickElementWithResDic("max",0,0) 
 SendMessage(chatId,chatMessage,attachment) 
-findAndClickElement("recovery.png",20,20,50)
+findAndClickElementWithResDic("recovery",0,0)
 sleep 300
-findAndClickElement("close.png",20,20,50)
+findAndClickElementWithResDic("close",0,0)
 
-BlockInput, MouseMoveOff
-BlockInput, Default
+;BlockInput, MouseMoveOff
+;BlockInput, Default
     
 TrayTip 消息, 自动发消息结束
 Sleep 1000   ; 让它显示 1 秒钟.  

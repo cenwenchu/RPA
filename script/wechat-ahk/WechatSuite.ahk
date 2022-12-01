@@ -1,4 +1,5 @@
 ﻿#Include config.ahk
+#Include FindText.ahk
 
 ; 激活微信App
 initWechatApp(element)
@@ -41,49 +42,67 @@ initWechatApp(element)
     switch element
     {
         case "chat": 
-        {
-            tempStr := WechatConfig.RES_PATH . "chat-select.png"
-            ImageSearch, FoundX, FoundY,0,0,%W%,%H%, *100 %tempStr%
-            
-            if(ErrorLevel = 1)
-            {
-                tempStr := WechatConfig.RES_PATH . "chat-not-select.png"
-                ImageSearch, FoundX, FoundY,0,0,%W%,%H%, *100 %tempStr%
-            }
-                
-            
+        {        
+           findAndClickElementWithResDic("chat-not-select",0,0)   
         }
         case "address_book":  
         {
-            tempStr := WechatConfig.RES_PATH . "address-book-select.png"
-            ImageSearch, FoundX, FoundY,0,0,%W%,%H%, *100 %tempStr%
-            
-            if(ErrorLevel = 1)
-            {
-                tempStr := WechatConfig.RES_PATH . "address-book-not-select.png"
-                ImageSearch, FoundX, FoundY,0,0,%W%,%H%, *100 %tempStr%
-            }
-                
-        }
+           findAndClickElementWithResDic("address-book-not-select",0,0)        
+        }  
+    } 
+      
+}
+
+findAndClickElementWithResDic(res_id,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0)
+{
+    element := WechatConfig.RES_Dic[res_id]
+    
+    if (element && element != "")
+    {
+        resultArray := findAndClickElementV2(element,move_x,move_y,x1,y1,x2,y2)
         
-    }
+        if (!resultArray)
+        {
+            TrayTip 消息, 没有找到对应的操作元素： + %res_id%
     
-    if (ErrorLevel = 2)
-    {
-        TrayTip 消息, 定位的图片文件地址不对.
+            return false
+        }
+        else
+            return true
     }
-    else if (ErrorLevel = 1)
+    Else
     {
-        TrayTip 消息, 微信需要登录后才能继续操作
+        MsgBox, res_id:%res_id% not correct!
+    }
+}
+
+
+findAndClickElementV2(element,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0)
+{
+    if (x2 == 0)
+        x2 := A_ScreenWidth
+        
+    if (y2 == 0)
+        y2 := A_ScreenHeight
     
-        return
+    sleep 1000
+  
+    resultArray := FindText(X, Y, x1, y1, x2, y2, 0, 0, element)
+
+    
+    if (resultArray = 0)
+    {
+        ;TrayTip 消息, 没有找到对应的操作元素： + %element%
+    
+        return false
     }
     else
     {
-        MouseMove,%FoundX%, %FoundY%
-        Click
+        FindText().Click(X+move_x, Y+move_y, "L")
+        sleep 1000
+        
+        return true
     }
-      
 }
 
 ; 定位到对应微信组件
@@ -125,8 +144,12 @@ findAndClickElement(element,move_x,move_y,colorValue,x1:=0,y1:=0,x2:=0,y2:=0)
 ;定向给客户发消息
 SendMessage(chatid,message,attachment)
 {
-   if !findAndClickElement("search.png",100,20,50)
+   if !findAndClickElementWithResDic("search",20,0)
+   {
         return
+   }
+        
+   
    
    Send %chatid%
    Sleep 1000
@@ -136,24 +159,24 @@ SendMessage(chatid,message,attachment)
    Sleep 500
    Send {Enter}
    
-   if findAndClickElement("emoji.png",20,20,50,0,1000)
-       findAndClickElement("smile.png",20,20,50)
+   if findAndClickElementWithResDic("emoji",0,0)
+       findAndClickElementWithResDic("smile",0,0)
    
    Send {Enter}
    Sleep 500
    
    if(attachment && attachment != "")
    {
-        findAndClickElement("input-chinese.png",20,20,50,1200,1200) 
+        findAndClickElementWithResDic("input-chinese",0,0) 
         
-        if findAndClickElement("attachment.png",20,20,30,200,600)
+        if findAndClickElementWithResDic("attachment",0,0)
         {
             Sleep 500
             
             Send %attachment%{Enter}
             Sleep 500
             Send {Enter}
-            ;findAndClickElement("save-file-open.png",20,20,50) 
+            ;findAndClickElementWithResDic("save-file-open.png",0,0) 
             
         }
    }
@@ -164,17 +187,17 @@ SendMessage(chatid,message,attachment)
 ;解析微信聊天记录
 ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
 {
-    if !findAndClickElement("search.png",100,20,50)
+    if !findAndClickElementWithResDic("search",20,0)
         return
 
     Send %chatid%
     Sleep 2000
     Send {Enter}
 
-    if !findAndClickElement("chat-more.png",20,20,50)
+    if !findAndClickElementWithResDic("chat-more",0,0)
         return 
         
-    if !findAndClickElement("chat-record.png",20,20,50)
+    if !findAndClickElementWithResDic("chat-record",0,0)
         return 
 
     TrayTip 消息, 分析微信聊天记录开始
@@ -250,7 +273,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
         {
        
          ; skip common line readin
-         if (pre_found_text != "" and pre_found_text == text and current_found_index == 0)
+         if (pre_found_text != "" and pre_found_text == text and A_Index == 0)
          {
            skip_record := true
          }
