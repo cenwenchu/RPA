@@ -53,13 +53,26 @@ initWechatApp(element)
       
 }
 
-findAndClickElementWithResDic(res_id,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0)
+findAndClickElementWithResDic(res_id,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=0.1,fault2background:=0.1)
 {
-    element := WechatConfig.RES_Dic[res_id]
+    ;SysGet, MonitorName, MonitorName
+    SysGet, Monitor, Monitor
+    ;SysGet, MonitorWorkArea, MonitorWorkArea
+    ;MsgBox, Monitor:`tName:`t%MonitorName%`nLeft:`t%MonitorLeft% (%MonitorWorkAreaLeft% work)`nTop:`t%MonitorTop% (%MonitorWorkAreaTop% work)`nRight:`t%MonitorRight% (%MonitorWorkAreaRight% work)`nBottom:`t%MonitorBottom% (%MonitorWorkAreaBottom% work)
+    
+    if (MonitorRight >= 3000)
+    {
+        element := WechatConfig.RES_Dic_3000[res_id]
+    }
+    else
+    {
+        element := WechatConfig.RES_Dic_1000[res_id]
+    }
+
     
     if (element && element != "")
     {
-        resultArray := findAndClickElementV2(element,move_x,move_y,x1,y1,x2,y2)
+        resultArray := findAndClickElementV2(element,move_x,move_y,x1,y1,x2,y2,fault2text,fault2background)
         
         if (!resultArray)
         {
@@ -77,7 +90,7 @@ findAndClickElementWithResDic(res_id,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0)
 }
 
 
-findAndClickElementV2(element,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0)
+findAndClickElementV2(element,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=0,fault2background:=0)
 {
     if (x2 == 0)
         x2 := A_ScreenWidth
@@ -87,7 +100,7 @@ findAndClickElementV2(element,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0)
     
     sleep 1000
   
-    resultArray := FindText(X, Y, x1, y1, x2, y2, 0, 0, element)
+    resultArray := FindText(X, Y, x1, y1, x2, y2, fault2text, fault2background, element)
 
     
     if (resultArray = 0)
@@ -149,8 +162,6 @@ SendMessage(chatid,message,attachment)
         return
    }
         
-   
-   
    Send %chatid%
    Sleep 1000
    Send {Enter}
@@ -159,10 +170,10 @@ SendMessage(chatid,message,attachment)
    Sleep 500
    Send {Enter}
    
-   if findAndClickElementWithResDic("emoji",0,0)
-       findAndClickElementWithResDic("smile",0,0)
+   ;if findAndClickElementWithResDic("emoji",0,0)
+   ;    findAndClickElementWithResDic("smile",0,0)
    
-   Send {Enter}
+   ;Send {Enter}
    Sleep 500
    
    if(attachment && attachment != "")
@@ -206,10 +217,10 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
     WinGet, active_id, ID, A
     WinGetPos, X, Y, width, height, A  ; "A" 表示获取活动窗口的位置.
     WinGetActiveTitle, Title ; 后续用于比对是否打开了新窗口
-    ; MsgBox, The active window is at %X%,%Y%,%width%,%height%
+    ;MsgBox, The active window is at %X%,%Y%,%width%,%height%
 
     ; cursor start position 
-    newPosX := 230 
+    newPosX := (width/1100) * 230 
     newPosY := height-5
 
 
@@ -241,12 +252,22 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
      text := ""
      clipboard := "" 
      skip_record := false
+     isfound := false
+     
+     if !WinActive(Title) 
+     {
+        WinActivate, Title
+        Sleep 1000
+     }
+
      MouseClick, left, newPosX, newPosY
+     
      
      ; inner loop to search chat content 
      Loop, 10
      {
-       MouseClick, left, newPosX, newPosY+step, 2
+
+        MouseClick, left, newPosX, newPosY+step, 2
          
         ;MsgBox, contents before: %text%
         Send ^c
@@ -254,23 +275,44 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
         text := clipboard
         clipboard := ""  ; Start off empty to allow ClipWait to detect when the text has arrived.
         
-       
-        ;MsgBox, contents after: %text%
-        ; MouseGetPos, xpos, ypos 
-       ; MsgBox, The cursor is at X%xpos% Y%ypos%
-     
-        ; process image content 
+        ;处理文件类型对话
         WinGetTitle, TempTitle, A
+        
         if (TempTitle <> Title)
         {
-          WinKill, %TempTitle%
-          Sleep 200
+          ;MsgBox % "TempTitle:" . TempTitle . "Title:" Title
+          
+          waitTimes := 2000
+          
+          empty_rounds := 0
+          isfound := true
+     
+          while(waitTimes > 0)
+          {
+            if WinExist(TempTitle) 
+                WinKill, %TempTitle%
+          
+            WinGetTitle, TempTitle, A
+          
+            if (TempTitle <> Title)
+            {
+                Sleep 200
+                waitTimes :=  waitTimes - 200             
+            }
+            else
+            {
+                break
+            } 
+          }
+
           break
         }
        
         ; process text content, can use RegExMatch 
         if (text <> "")
         {
+          empty_rounds := 0
+          isfound := true
        
          ; skip common line readin
          if (pre_found_text != "" and pre_found_text == text and A_Index == 0)
@@ -313,25 +355,25 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
      ; check to end loop 
      if (pre_found_text <> "")
      {
-       empty_rounds := 0
-      
        if (pre_found_text == current_found_text and pre_found_index == current_found_index)
        {
          ; MsgBox % "LoopEnd now - totalcount: " + chatContentsList.MaxIndex()
          break
        }
      }
-     else
+     
+     if(!isfound)
      {
-       empty_rounds := empty_rounds + 1
-      
-       if （empty_rounds >= 2)
-       {
-         ; MsgBox % "LoopEnd now - totalcount: " + chatContentsList.MaxIndex()
-         break
-       }
+        empty_rounds := empty_rounds + 1
+     
+         if (empty_rounds >= 2)
+         {
+             ; MsgBox % "LoopEnd now - totalcount: " + chatContentsList.MaxIndex()
+           break
+         }
      }
      
+
      pre_found_text := current_found_text
      pre_found_index := current_found_index
      
@@ -347,74 +389,116 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
       break
      }
      
+     if !WinActive(Title) 
+     {
+        WinActivate, Title
+        Sleep 1000
+     }
+     
      MouseClick, WheelUP
+     
     }
 
     ; 处理一下最后一屏幕的数据
+
 
     step := 0
 
     if (remain_process_line_count > 0)
     {
         Loop
-    {
-        MouseClick, left, newPosX, newPosY+step, 2
-         
-        ; MsgBox, contents before: %text%
-        Send ^c
-        Sleep 500
-        text := clipboard
-        clipboard := ""  ; Start off empty to allow ClipWait to detect when the text has arrived.
-        skip_record := false
-        
-        ; process image content 
-        WinGetTitle, TempTitle, A
-        if (TempTitle <> Title)
         {
-          WinKill, %TempTitle%
-          Sleep 200
-          break
-        }
-       
-        ; process text content, can use RegExMatch 
-        if (text <> "")
-        {
-       
-         ; skip common line readin
-         if (pre_found_text != "" and pre_found_text == text)
-         {
-           skip_record := true
-         }
-         
-       
-         if (!skip_record)
-         {
-          if (reg_rule <> "")
-          {
-             foundPos := RegExMatch(text, reg_rule)
-        
-             if (foundPos >= 1)
-             {
-               chatContentsList.Insert(text)
-               pre_found_text := text
-             }
-          }
-          else
-          {
-             chatContentsList.Insert(text)
-             pre_found_text := text
-          }
+            MouseClick, left, newPosX, newPosY+step, 2
+             
+            ; MsgBox, contents before: %text%
+            Send ^c
+            Sleep 500
+            text := clipboard
+            clipboard := ""  ; Start off empty to allow ClipWait to detect when the text has arrived.
+            skip_record := false
+            
+            ; process image content 
+            ;处理文件类型对话
+            WinGetTitle, TempTitle, A
+            
+            if (TempTitle <> Title)
+            {
+              TrayTip 消息, TempTitle:%TempTitle% . Title: %Title%
+              
+              waitTimes := 2000
 
+              
+              while(waitTimes > 0)
+              {
+                if WinExist(TempTitle) 
+                    WinKill, %TempTitle%
+              
+                WinGetTitle, TempTitle, A
+              
+                if (TempTitle <> Title)
+                {
+                    Sleep 200
+                    waitTimes :=  waitTimes - 200             
+                }
+                else
+                {
+                    break
+                } 
+              }
+
+            }
+            else
+            {
+                    ; process text content, can use RegExMatch 
+                if (text <> "")
+                {
+               
+                     ; skip common line readin
+                     if (pre_found_text != "" and pre_found_text == text)
+                     {
+                       skip_record := true
+                     }
+                     
+                   
+                     if (!skip_record)
+                     {
+                          if (reg_rule <> "")
+                          {
+                             foundPos := RegExMatch(text, reg_rule)
+                        
+                             if (foundPos >= 1)
+                             {
+                               chatContentsList.Insert(text)
+                               pre_found_text := text
+                             }
+                          }
+                          else
+                          {
+                             chatContentsList.Insert(text)
+                             pre_found_text := text
+                          }
+                     }
+                     
+                     MouseClick, left, newPosX, newPosY+step  ;reset double click
+                }
+            }
+            
+            step := step - 20
+            
+            if (newPosY+step <= 0)
+             break
+             
+            if (remain_process_line_count > 0)
+             {
+               remain_process_line_count := remain_process_line_count - 1
+             }
+             
+             if (remain_process_line_count = 0) 
+             {
+              ; MsgBox % "LoopEnd now - totalcount: " + chatContentsList.MaxIndex()
+                break
+             }
          }
-         
-         MouseClick, left, newPosX, newPosY+step  ;reset double click
-        }
-        
-        step := step - 20
-        
-        if (newPosY+step <= 0)
-         break
-     }
     }
 
     Sleep 5000

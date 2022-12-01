@@ -120,18 +120,20 @@ initWechatApp("chat")
 BlockInput, MouseMove 
 BlockInput, Mouse
 
-findAndClickElementWithResDic("max",0,0) 
-totalCount := ParseWechatContent(chatId,messageKeyWords,resultFile,messageProcessCount) 
-findAndClickElementWithResDic("recovery",0,0)
-findAndClickElementWithResDic("close",0,0)
+
+if (findAndClickElementWithResDic("max",0,0))
+{
+   totalCount := ParseWechatContent(chatId,messageKeyWords,resultFile,messageProcessCount) 
+   findAndClickElementWithResDic("recovery",0,0)
+   findAndClickElementWithResDic("close",0,0) 
+}
 
 BlockInput, MouseMoveOff
 BlockInput, Default
    
 TempTip := "分析聊天记录结束,符合结果 " . totalCount . " 条,已保存到:微信分析结果文件.txt"
 
-TrayTip 消息,%TempTip%
-Sleep 1000   ; 让它显示 1 秒钟.
+MsgBox, %TempTip%
 
 return
 
@@ -167,8 +169,7 @@ findAndClickElementWithResDic("close",0,0)
 ;BlockInput, MouseMoveOff
 ;BlockInput, Default
     
-TrayTip 消息, 自动发消息结束
-Sleep 1000   ; 让它显示 1 秒钟.  
+MsgBox, 自动发消息结束  
     
 return
 
