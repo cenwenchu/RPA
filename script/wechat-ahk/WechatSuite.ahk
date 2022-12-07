@@ -53,7 +53,7 @@ initWechatApp(element)
       
 }
 
-findAndClickElementWithResDic(res_id,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=0.1,fault2background:=0.1)
+findAndClickElementWithResDic(res_id,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=0,fault2background:=0)
 {
     ;SysGet, MonitorName, MonitorName
     SysGet, Monitor, Monitor
@@ -72,7 +72,7 @@ findAndClickElementWithResDic(res_id,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0,fault
     
     if (element && element != "")
     {
-        resultArray := findAndClickElementV2(element,move_x,move_y,x1,y1,x2,y2,fault2text,fault2background)
+        resultArray := findAndClickElementV2(element,move_x,move_y,clickTimes,x1,y1,x2,y2,fault2text,fault2background)
         
         if (!resultArray)
         {
@@ -90,7 +90,7 @@ findAndClickElementWithResDic(res_id,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0,fault
 }
 
 
-findAndClickElementV2(element,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=0,fault2background:=0)
+findAndClickElementV2(element,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=0,fault2background:=0)
 {
     if (x2 == 0)
         x2 := A_ScreenWidth
@@ -111,7 +111,8 @@ findAndClickElementV2(element,move_x,move_y,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=
     }
     else
     {
-        FindText().Click(X+move_x, Y+move_y, "L")
+        ;FindText().Click(X+move_x, Y+move_y, "L")
+        FindText().Click(X+move_x, Y+move_y, clickTimes)
         sleep 1000
         
         return true
@@ -194,6 +195,157 @@ SendMessage(chatid,message,attachment)
    
    return
 }
+
+;解析微信通讯录,type:friend,group,tag
+ParseWechatAddressBook(type,save_filepath,startPos:= 0,max_process_line_count:= 100)
+{
+    contactList := Array()
+    cardIndex := 0
+    isGroup := 0
+    isContact := 0
+
+    if (type == "friend" or type == "group")
+    {
+        locToAddressBookTop()
+        
+        remainLineCount := max_process_line_count
+        
+        ;定位到处理起点
+        if (startPos > 0)
+        {
+            SendInput {Down %startPos%}
+            cardIndex:= cardIndex+startPos
+        }
+        
+        while(remainLineCount > 0)
+        {
+               
+            isContactOrGroupCard := false
+            
+            if (isContact == 0 && isGroup == 0)
+            {
+                if (findAndClickElementWithResDic("sendMessage",0,0,0))
+                    isContactOrGroupCard := true
+            }
+            else
+            {
+                isContactOrGroupCard := true
+            }
+
+            if (isContactOrGroupCard)
+            {
+                ;联系人卡片
+                if (findAndClickElementWithResDic("wechatId",70*WechatConfig.SCALING,0,2))
+                {
+                    wechatId := copyFromClipboard()
+                    findAndClickElementWithResDic("area",50*WechatConfig.SCALING,0,2)
+                    area := copyFromClipboard()
+                    
+                    if(findAndClickElementWithResDic("wechatIcon-M",-50*WechatConfig.SCALING,0,2,0,0,0,0,0,0.1))
+                        nick := copyFromClipboard()
+                    else
+                    {
+                        if(findAndClickElementWithResDic("wechatIcon-F",-50*WechatConfig.SCALING,0,2,0,0,0,0,0,0.1))
+                            nick := copyFromClipboard()
+                    }
+                       
+                    
+                    MsgBox % wechatId " , " area " , " nick
+                    
+                    info :=  wechatId . "," . area . "," . nick
+                    contactList.Insert(info)
+                    
+                    isContact := 1
+                    
+                }
+                else{
+                    ;群卡片
+                    if(findAndClickElementWithResDic("sendMessage",0,0))
+                    {
+                        if (findAndClickElementWithResDic("chat-more",0,0))
+                        {
+                            if (findAndClickElementWithResDic("groupName",0,30,2))
+                            {
+                                findAndClickElementWithResDic("groupName",0,30,2)
+                                groupName := copyFromClipboard()
+                                
+                                if (groupName != "")
+                                {
+                                    MsgBox % groupName ",," groupName
+                    
+                                    info :=  groupName . "," . "," . groupName
+                                    contactList.Insert(info)
+                                }  
+                            }
+                        }
+                    
+                        isGroup := 1
+                        
+                        findAndClickElementWithResDic("address-book-not-select",0,0) 
+                    }  
+                }
+                
+            }
+            
+            cardIndex := cardIndex +1
+            locToAddressBookTop(cardIndex)
+            SendInput {Down %cardIndex%}
+                    
+            remainLineCount := remainLineCount -1 
+        
+        }
+        
+            
+        totalCount:= saveResultToFile(contactList,save_filepath)
+    
+        return totalCount
+  
+    }
+    else if (type == "tag")
+    {
+    
+    }
+       
+}
+
+copyFromClipboard()
+{
+    clipboard := ""
+    Send ^c
+    Sleep 500
+    text := clipboard
+    clipboard := ""  ; Start off empty to allow ClipWait to detect when the text has arrived.
+    
+    return text     
+}
+
+
+locToAddressBookTop(backStep:=0 )
+{
+
+    stepLength := 50
+
+    if !findAndClickElementWithResDic("search",20,200)
+       return
+            
+    if (backStep > 0)
+    {
+        SendInput {UP %backStep%}
+    }
+            
+    while(!findAndClickElementWithResDic("newFriend",0,0))
+    {
+       SendInput {UP %stepLength%}
+       
+       if (stepLength <= 2000)
+       {
+            stepLength := stepLength + 50
+       }
+       else
+            break
+    }
+}
+
 
 ;解析微信聊天记录
 ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
@@ -503,35 +655,48 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
 
     Sleep 5000
 
-    totalCount := 0
-
-    ; 保存到文件里面 
-    if (save_filepath && chatContentsList.MaxIndex() && chatContentsList.MaxIndex() >0 )
-    {
-    
-     totalCount := chatContentsList.MaxIndex()
-     
-     file := FileOpen(save_filepath, "w")
-     
-     if !IsObject(file)
-     {
-       MsgBox Can't open "%save_filepath%" for writing.
-     }
-     else
-     {
-      Loop % chatContentsList.MaxIndex()
-      {
-          file.WriteLine(chatContentsList[A_Index])
-         }
-     
-      file.Close()
-      
-      Sleep 1000
-     }
-    }
+    totalCount:= saveResultToFile(chatContentsList,save_filepath)
     
     WinKill, %Title%
     Sleep 1000
 
     return totalCount
+}
+
+; 保存到文件里面 
+saveResultToFile(result,save_filepath)
+{
+    totalCount := 0
+    
+    if (result && save_filepath)
+    {
+        ; 保存到文件里面 
+        if (save_filepath && result.MaxIndex() && result.MaxIndex() >0 )
+        {
+        
+             totalCount := result.MaxIndex()
+             
+             file := FileOpen(save_filepath, "w")
+             
+             if !IsObject(file)
+             {
+                MsgBox Can't open "%save_filepath%" for writing.
+             }
+             else
+             {
+                Loop % result.MaxIndex()
+                {
+                  file.WriteLine(result[A_Index])
+                }
+             
+                file.Close()
+              
+                Sleep 1000
+             }
+        }   
+    
+    }
+    
+    return totalCount
+    
 }

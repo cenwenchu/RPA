@@ -21,19 +21,23 @@ LogError(exception) {
 
 ;配置资源目录、聊天记录分析后的存储文件
 resultFile := A_ScriptDir
+resultFile_addressBook := A_ScriptDir
     
 if (InStr(A_ScriptDir, "\") > 0)
 {
    resultFile := resultFile . "\微信分析结果文件.txt" 
+   resultFile_addressBook := resultFile_addressBook . "\微信通讯录结果文件.txt" 
 }
 else
 {
    resultFile := resultFile . "/微信分析结果文件.txt" 
+   resultFile_addressBook := resultFile_addressBook . "/微信通讯录结果文件.txt" 
 }
 
 ;应用的一些基础配置填入
 Menu, WechatMenu, Add, &发送聊天消息, SendWechatMessage
 Menu, WechatMenu, Add, &分析聊天记录, AnalysisWechatMessage
+Menu, WechatMenu, Add, &分析并保存通讯簿, AnalysisWechatAddressBook
 
 Menu, AboutMenu, Add, &帮助, help
 Menu, AboutMenu, Add, &关于, about
@@ -48,15 +52,26 @@ Gui, +Resize  ; 让用户可以调整窗口的大小.
 Gui, Add, Text,section R1, 请输入-好友或者群名称:
 Gui, Add, Text,R3, 请输入-自动发送的聊天内容（文字）:
 Gui, Add, Text,R1, 自动发送的聊天附件（文件）:
-Gui, Add, Button,R1, 选择聊天附件
+Gui, Add, Button,, 选择聊天附件
+Gui, Add, Text,R1, --------------- 聊天分析 -----------------
 Gui, Add, Text,R1, 请输入-分析聊天的数量:
 Gui, Add, Text,R2, 请输入-分析聊天包含的关键词:
+Gui, Add, Text,R1, --------------- 通讯录分析 -----------------
+Gui, Add, Text,R1, 请选择-分析通讯录的类型:
+Gui, Add, Text,R1, 请输入-分析通讯录的开始位置:
+Gui, Add, Text,R1, 请输入-分析通讯录的数量:
+
 
 Gui, Add, Edit,ys w200 vchatId
 Gui, Add, Edit,R3 w300 vchatMessage,欢迎你来杭州~
 Gui, Add, Edit, R2 w300 ReadOnly vattachment
+Gui, Add, Text,R1, ----------------------------------
 Gui, Add, Edit,w100 vmessageProcessCount,10
-Gui, Add, Edit,R2 w300 vmessageKeyWords,手机号码
+Gui, Add, Edit,R3 w300 vmessageKeyWords,手机号码
+Gui, Add, Text,R1, ----------------------------------
+Gui, Add, DropDownList, vaddressBookTypeChoice, 联系人|分组|标签
+Gui, Add, Edit,w100 vaddressBookProcessStartPos,0
+Gui, Add, Edit,w100 vaddressBookProcessCount,10
 
 Gui, Show
 
@@ -83,6 +98,27 @@ if (select_file != "")
 }  
 
 return 
+
+AnalysisWechatAddressBook:
+
+GuiControlGet, addressBookTypeChoice
+GuiControlGet, addressBookProcessStartPos
+GuiControlGet, addressBookProcessCount
+
+initWechatApp("address_book")  
+
+if (findAndClickElementWithResDic("max",0,0))
+{
+   totalCount := ParseWechatAddressBook(WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice],resultFile_addressBook,addressBookProcessStartPos,addressBookProcessCount) 
+   findAndClickElementWithResDic("recovery",0,0)
+   findAndClickElementWithResDic("close",0,0) 
+}
+
+TempTip := "分析通讯录结束,符合结果 " . totalCount . " 条,已保存到:微信通讯录结果文件.txt"
+
+MsgBox, %TempTip%
+
+return
 
 
 AnalysisWechatMessage:
