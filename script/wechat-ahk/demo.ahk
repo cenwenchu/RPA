@@ -16,9 +16,17 @@ else
 
 reg_rule := ".*渠道.*"
 
+
 Sleep 3000
 
-ParseWechatAddressBook("friend",resultFile,13,10)
+result := findAndClickElementWithResDic("address-book-not-select,address-book-select",0,0)  
+
+;result := findAndClickElementWithResDic("chat-not-select,chat-select",0,0)  
+
+MsgBox, %result%
+
+Sleep 30000
+;ParseWechatAddressBook("friend",resultFile,13,10)
 
 ^x::ExitApp
 

@@ -43,11 +43,11 @@ initWechatApp(element)
     {
         case "chat": 
         {        
-           findAndClickElementWithResDic("chat-not-select",0,0)   
+           findAndClickElementWithResDic("chat-not-select,chat-select",0,0)   
         }
         case "address_book":  
         {
-           findAndClickElementWithResDic("address-book-not-select",0,0)        
+           findAndClickElementWithResDic("address-book-not-select,address-book-select",0,0,2,0,0,0,0,0,0.1)     
         }  
     } 
       
@@ -60,13 +60,43 @@ findAndClickElementWithResDic(res_id,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:
     ;SysGet, MonitorWorkArea, MonitorWorkArea
     ;MsgBox, Monitor:`tName:`t%MonitorName%`nLeft:`t%MonitorLeft% (%MonitorWorkAreaLeft% work)`nTop:`t%MonitorTop% (%MonitorWorkAreaTop% work)`nRight:`t%MonitorRight% (%MonitorWorkAreaRight% work)`nBottom:`t%MonitorBottom% (%MonitorWorkAreaBottom% work)
     
+    sp := ","
+    StringGetPos, pos, res_id, %sp%
+    
+    if (pos >= 0)
+    {
+        res_ids := StrSplit(res_id, sp) 
+    }
+    
     if (MonitorRight >= 3000)
     {
-        element := WechatConfig.RES_Dic_3000[res_id]
+       if (res_ids)
+       {
+            Loop % res_ids.MaxIndex()
+            {
+                if (element)
+                    element .= WechatConfig.RES_Dic_3000[res_ids[A_Index]]
+                else
+                    element := WechatConfig.RES_Dic_3000[res_ids[A_Index]]
+            }
+       }
+       else
+          element := WechatConfig.RES_Dic_3000[res_id]
     }
     else
     {
-        element := WechatConfig.RES_Dic_1000[res_id]
+        if (res_ids)
+        {
+            Loop % res_ids.MaxIndex()
+            {
+                if (element)
+                    element .= WechatConfig.RES_Dic_1000[res_ids[A_Index]]
+                else
+                    element := WechatConfig.RES_Dic_1000[res_ids[A_Index]]
+            }
+        }
+       else
+         element := WechatConfig.RES_Dic_1000[res_id]
     }
 
     
@@ -92,11 +122,26 @@ findAndClickElementWithResDic(res_id,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:
 
 findAndClickElementV2(element,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=0,fault2background:=0)
 {
+    /*
     if (x2 == 0)
         x2 := A_ScreenWidth
         
     if (y2 == 0)
         y2 := A_ScreenHeight
+        
+     */
+     if (x1 == 0)
+        x1 := -150000
+        
+     if (x2 == 0)
+        x2 := 150000
+        
+     if (y1 == 0)
+        y1 := -150000
+        
+     if (y2 == 0)
+        y2 := 150000
+     
     
     sleep 1000
   
@@ -210,6 +255,11 @@ ParseWechatAddressBook(type,save_filepath,startPos:= 0,max_process_line_count:= 
         
         remainLineCount := max_process_line_count
         
+        if (remainLineCount == 0)
+        {
+            remainLineCount := 10000
+        }
+        
         ;定位到处理起点
         if (startPos > 0)
         {
@@ -237,52 +287,75 @@ ParseWechatAddressBook(type,save_filepath,startPos:= 0,max_process_line_count:= 
                 ;联系人卡片
                 if (findAndClickElementWithResDic("wechatId",70*WechatConfig.SCALING,0,2))
                 {
-                    wechatId := copyFromClipboard()
-                    findAndClickElementWithResDic("area",50*WechatConfig.SCALING,0,2)
-                    area := copyFromClipboard()
-                    
-                    if(findAndClickElementWithResDic("wechatIcon-M",-50*WechatConfig.SCALING,0,2,0,0,0,0,0,0.1))
-                        nick := copyFromClipboard()
+                    if (type == "friend")
+                    {
+                        wechatId := copyFromClipboard()
+                        findAndClickElementWithResDic("area",50*WechatConfig.SCALING,0,2)
+                        area := copyFromClipboard()
+                        
+                        if(findAndClickElementWithResDic("wechatIcon-M,wechatIcon-F",-50*WechatConfig.SCALING,0,2,0,0,0,0,0,0.1))
+                            nick := copyFromClipboard()
+
+                        if(findAndClickElementWithResDic("tag",180*WechatConfig.SCALING,0,2))
+                            tag := copyFromClipboard()
+                           
+                        
+                        ;MsgBox % type . "," . wechatId . "," . area . "," . nick . "," . tag
+                        
+                        info :=  type . "," . wechatId . "," . area . "," . nick . "," . tag
+                        
+                        
+                        if(contactList.MaxIndex() && contactList.MaxIndex() >0 )
+                        {
+                            pre_info := contactList[contactList.MaxIndex()]
+                            
+                            ;当前的联系人完全等于上一条的联系人，代表解析结束
+                            if(pre_info == info)
+                                break
+                        }
+                        
+                        contactList.Insert(info)
+                    }
                     else
                     {
-                        if(findAndClickElementWithResDic("wechatIcon-F",-50*WechatConfig.SCALING,0,2,0,0,0,0,0,0.1))
-                            nick := copyFromClipboard()
+                        ;如果进入了联系人，那么代表group已经结束
+                        if (type == "group")
+                            break
                     }
-                       
-                    
-                    MsgBox % wechatId " , " area " , " nick
-                    
-                    info :=  wechatId . "," . area . "," . nick
-                    contactList.Insert(info)
                     
                     isContact := 1
                     
                 }
                 else{
                     ;群卡片
-                    if(findAndClickElementWithResDic("sendMessage",0,0))
+                    if (type == "group")
                     {
-                        if (findAndClickElementWithResDic("chat-more",0,0))
+                        if(findAndClickElementWithResDic("sendMessage",0,0))
                         {
-                            if (findAndClickElementWithResDic("groupName",0,30,2))
+                            if (findAndClickElementWithResDic("chat-more",0,0))
                             {
-                                findAndClickElementWithResDic("groupName",0,30,2)
-                                groupName := copyFromClipboard()
-                                
-                                if (groupName != "")
+                                if (findAndClickElementWithResDic("groupName",0,30,1))
                                 {
-                                    MsgBox % groupName ",," groupName
-                    
-                                    info :=  groupName . "," . "," . groupName
-                                    contactList.Insert(info)
-                                }  
-                            }
-                        }
-                    
-                        isGroup := 1
+                                    Sleep 1500
+                                    findAndClickElementWithResDic("groupName",0,30,2)
+                                    groupName := copyFromClipboard()
+                                    
+                                    if (groupName != "")
+                                    {
+                                        ;MsgBox % type . "," . groupName . "," . "," . groupName
                         
-                        findAndClickElementWithResDic("address-book-not-select",0,0) 
-                    }  
+                                        info := type . "," . groupName . "," . "," . groupName
+                                        contactList.Insert(info)
+                                    }  
+                                }
+                            }
+                        
+                            isGroup := 1
+                            
+                            findAndClickElementWithResDic("address-book-not-select",0,0) 
+                        }
+                    }
+                      
                 }
                 
             }
@@ -296,7 +369,7 @@ ParseWechatAddressBook(type,save_filepath,startPos:= 0,max_process_line_count:= 
         }
         
             
-        totalCount:= saveResultToFile(contactList,save_filepath)
+        totalCount:= saveResultToFile(contactList,save_filepath,true)
     
         return totalCount
   
@@ -664,7 +737,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
 }
 
 ; 保存到文件里面 
-saveResultToFile(result,save_filepath)
+saveResultToFile(result,save_filepath,isAppend:=false)
 {
     totalCount := 0
     
@@ -676,7 +749,10 @@ saveResultToFile(result,save_filepath)
         
              totalCount := result.MaxIndex()
              
-             file := FileOpen(save_filepath, "w")
+             if (isAppend)
+                file := FileOpen(save_filepath, "a")
+             else
+                file := FileOpen(save_filepath, "w")
              
              if !IsObject(file)
              {

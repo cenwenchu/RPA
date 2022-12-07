@@ -26,12 +26,12 @@ resultFile_addressBook := A_ScriptDir
 if (InStr(A_ScriptDir, "\") > 0)
 {
    resultFile := resultFile . "\微信分析结果文件.txt" 
-   resultFile_addressBook := resultFile_addressBook . "\微信通讯录结果文件.txt" 
+   resultFile_addressBook := resultFile_addressBook . "\微信通讯录结果文件" 
 }
 else
 {
    resultFile := resultFile . "/微信分析结果文件.txt" 
-   resultFile_addressBook := resultFile_addressBook . "/微信通讯录结果文件.txt" 
+   resultFile_addressBook := resultFile_addressBook . "/微信通讯录结果文件" 
 }
 
 ;应用的一些基础配置填入
@@ -41,6 +41,7 @@ Menu, WechatMenu, Add, &分析并保存通讯簿, AnalysisWechatAddressBook
 
 Menu, AboutMenu, Add, &帮助, help
 Menu, AboutMenu, Add, &关于, about
+Menu, AboutMenu, Add, &系统信息, systemInfo
 
 Menu, MyMenuBar, Add, 【微信操作菜单】, :WechatMenu
 Menu, MyMenuBar, Add, 【帮助】, :AboutMenu
@@ -83,6 +84,13 @@ help:
     MsgBox, 该软件是模拟微信操作的机器人，首先必须启动并登录微信。当前模拟支持3种操作：`n`t(1)自动发消息，填写微信好友名称或者群名称，输入想要发送的文字、选择需要发送的附件，然后点击【微信操作菜单】-【发送聊天消息】开始发消息;`n`t(2)自动分析消息，填写微信好友名称或者群名称，输入想要分析的聊天数量（选的越多，分析的越多），填入分析聊天包含的关键词（”手机号码“作为特殊规则，代表聊天记录中带有手机号码;其他文字就代表聊天中包含这些文字），最终分析结果会保存到目录中的"微信分析结果文件.txt"，点击【微信操作菜单】-【分析聊天记录】开始分析;
 return 
 
+systemInfo:
+    SysGet, MonitorName, MonitorName
+    SysGet, Monitor, Monitor
+    SysGet, MonitorWorkArea, MonitorWorkArea
+    MsgBox, 显示器信息:`nName:`t%MonitorName%`nLeft:`t%MonitorLeft% (%MonitorWorkAreaLeft% work)`nTop:`t%MonitorTop% (%MonitorWorkAreaTop% work)`nRight:`t%MonitorRight% (%MonitorWorkAreaRight% work)`nBottom:`t%MonitorBottom% (%MonitorWorkAreaBottom% work)`n显示器DPI:%A_ScreenDPI%
+return 
+
 about:
     MsgBox, 作者:cenwenchu 版本信息:0.1 version.
 return
@@ -105,11 +113,28 @@ GuiControlGet, addressBookTypeChoice
 GuiControlGet, addressBookProcessStartPos
 GuiControlGet, addressBookProcessCount
 
+if(!addressBookTypeChoice)
+{
+    MsgBox, 请选择分析通讯录的类型！
+    return
+}
+
 initWechatApp("address_book")  
 
 if (findAndClickElementWithResDic("max",0,0))
 {
+   if (WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice] == "friend")
+   {
+        resultFile_addressBook := resultFile_addressBook . "_好友.txt"
+   }
+   
+   if (WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice] == "group")
+   {
+        resultFile_addressBook := resultFile_addressBook . "_群.txt"
+   }
+   
    totalCount := ParseWechatAddressBook(WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice],resultFile_addressBook,addressBookProcessStartPos,addressBookProcessCount) 
+        
    findAndClickElementWithResDic("recovery",0,0)
    findAndClickElementWithResDic("close",0,0) 
 }
