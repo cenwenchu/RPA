@@ -337,7 +337,6 @@ ParseWechatAddressBook(type,save_filepath,startPos:= 0,max_process_line_count:= 
                             {
                                 if (findAndClickElementWithResDic("groupName",0,30,1))
                                 {
-                                    Sleep 1500
                                     findAndClickElementWithResDic("groupName",0,30,2)
                                     groupName := copyFromClipboard()
                                     
@@ -421,6 +420,21 @@ locToAddressBookTop(backStep:=0 )
 }
 
 
+checkAndActiveWin(title,killflag:= false)
+{
+     if !WinActive(title) 
+     {
+        WinGetTitle, TempTitle, A
+        
+        if (killflag && TempTitle != title)
+            if WinExist(TempTitle) 
+                WinKill, %TempTitle%
+                
+        if WinExist(title)
+            WinActivate
+     }
+}
+
 ;解析微信聊天记录
 ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
 {
@@ -480,14 +494,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
      skip_record := false
      isfound := false
      
-     if !WinActive(Title) 
-     {
-
-        if WinExist(Title)
-            WinActivate
-           
-        Sleep 1000
-     }
+     checkAndActiveWin(Title)
 
      MouseClick, left, newPosX, newPosY
      
@@ -584,14 +591,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
      }
      
      ;再检查一次是否打开了特殊文件窗口
-     if !WinActive(Title) 
-     {
-        WinGetTitle, TempTitle, A
-        
-        if (TempTitle != Title)
-            if WinExist(TempTitle) 
-                WinKill, %TempTitle%
-     }
+     checkAndActiveWin(Title,true)
      
      ; check to end loop 
      if (pre_found_text <> "")
@@ -630,15 +630,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
       break
      }
      
-     
-     if !WinActive(Title) 
-     {
-
-        if WinExist(Title)
-            WinActivate
-           
-        Sleep 1000
-     }
+     checkAndActiveWin(Title)
      
      MouseClick, WheelUP
      
@@ -743,6 +735,10 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
               ; MsgBox % "LoopEnd now - totalcount: " + chatContentsList.MaxIndex()
                 break
              }
+             
+             
+             ;再检查一次是否打开了特殊文件窗口
+             checkAndActiveWin(Title,true)
          }
     }
 
