@@ -17,9 +17,11 @@ else
 reg_rule := ".*渠道.*"
 
 
+Tip(reg_rule)
+
 Sleep 3000
 
-result := findAndClickElementWithResDic("address-book-not-select,address-book-select",0,0)  
+;result := findAndClickElementWithResDic("address-book-not-select,address-book-select",0,0)  
 
 ;result := findAndClickElementWithResDic("chat-not-select,chat-select",0,0)  
 

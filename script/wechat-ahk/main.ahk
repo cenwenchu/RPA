@@ -26,12 +26,12 @@ resultFile_addressBook := A_ScriptDir
 if (InStr(A_ScriptDir, "\") > 0)
 {
    resultFile := resultFile . "\微信分析结果文件.txt" 
-   resultFile_addressBook := resultFile_addressBook . "\微信通讯录结果文件" 
+   resultFile_addressBook := A_ScriptDir . "\微信通讯录结果文件" 
 }
 else
 {
    resultFile := resultFile . "/微信分析结果文件.txt" 
-   resultFile_addressBook := resultFile_addressBook . "/微信通讯录结果文件" 
+   resultFile_addressBook := A_ScriptDir . "/微信通讯录结果文件" 
 }
 
 ;应用的一些基础配置填入
@@ -40,8 +40,9 @@ Menu, WechatMenu, Add, &分析聊天记录, AnalysisWechatMessage
 Menu, WechatMenu, Add, &分析并保存通讯簿, AnalysisWechatAddressBook
 
 Menu, AboutMenu, Add, &帮助, help
-Menu, AboutMenu, Add, &关于, about
 Menu, AboutMenu, Add, &系统信息, systemInfo
+Menu, AboutMenu, Add, &打开或关闭debug, openOrcloseDebug
+Menu, AboutMenu, Add, &关于, about
 
 Menu, MyMenuBar, Add, 【微信操作菜单】, :WechatMenu
 Menu, MyMenuBar, Add, 【帮助】, :AboutMenu
@@ -95,6 +96,21 @@ about:
     MsgBox, 作者:cenwenchu 版本信息:0.1 version.
 return
 
+openOrcloseDebug:
+
+    if (WechatConfig.IS_DEBUG == true)
+    {
+        WechatConfig.IS_DEBUG := false
+        MsgBox, Debug 被关闭~
+    }
+    else
+    {
+        WechatConfig.IS_DEBUG := true
+        MsgBox, Debug 被打开~
+    }
+    
+return 
+
 ; 关于选择聊天附件
 Button选择聊天附件:
 
@@ -125,12 +141,12 @@ if (findAndClickElementWithResDic("max",0,0))
 {
    if (WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice] == "friend")
    {
-        resultFile_addressBook := resultFile_addressBook . "_好友.txt"
+        resultFile_addressBook := A_ScriptDir . "\微信通讯录结果文件_好友.txt" 
    }
    
    if (WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice] == "group")
    {
-        resultFile_addressBook := resultFile_addressBook . "_群.txt"
+        resultFile_addressBook := A_ScriptDir . "\微信通讯录结果文件_群.txt"
    }
    
    totalCount := ParseWechatAddressBook(WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice],resultFile_addressBook,addressBookProcessStartPos,addressBookProcessCount) 
@@ -178,8 +194,8 @@ if (messageKeyWords != "")
  
 initWechatApp("chat")  
 
-BlockInput, MouseMove 
-BlockInput, Mouse
+;BlockInput, MouseMove 
+;BlockInput, Mouse
 
 
 if (findAndClickElementWithResDic("max",0,0))
@@ -189,8 +205,8 @@ if (findAndClickElementWithResDic("max",0,0))
    findAndClickElementWithResDic("close",0,0) 
 }
 
-BlockInput, MouseMoveOff
-BlockInput, Default
+;BlockInput, MouseMoveOff
+;BlockInput, Default
    
 TempTip := "分析聊天记录结束,符合结果 " . totalCount . " 条,已保存到:微信分析结果文件.txt"
 

@@ -22,7 +22,7 @@ initWechatApp(element)
      
     wechatPath:= value . "\Wechat.exe"
     
-    TrayTip 消息, 启动微信
+    Tip("启动微信")
     
     Run %wechatPath%   
     
@@ -56,7 +56,7 @@ initWechatApp(element)
 findAndClickElementWithResDic(res_id,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:=0,y2:=0,fault2text:=0,fault2background:=0)
 {
     ;SysGet, MonitorName, MonitorName
-    SysGet, Monitor, Monitor
+    ;SysGet, Monitor, Monitor
     ;SysGet, MonitorWorkArea, MonitorWorkArea
     ;MsgBox, Monitor:`tName:`t%MonitorName%`nLeft:`t%MonitorLeft% (%MonitorWorkAreaLeft% work)`nTop:`t%MonitorTop% (%MonitorWorkAreaTop% work)`nRight:`t%MonitorRight% (%MonitorWorkAreaRight% work)`nBottom:`t%MonitorBottom% (%MonitorWorkAreaBottom% work)
     
@@ -68,20 +68,20 @@ findAndClickElementWithResDic(res_id,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:
         res_ids := StrSplit(res_id, sp) 
     }
     
-    if (MonitorRight >= 3000)
+    if (A_ScreenDPI >= 180)
     {
        if (res_ids)
        {
             Loop % res_ids.MaxIndex()
             {
                 if (element)
-                    element .= WechatConfig.RES_Dic_3000[res_ids[A_Index]]
+                    element .= WechatConfig.RES_Dic_200DPI[res_ids[A_Index]]
                 else
-                    element := WechatConfig.RES_Dic_3000[res_ids[A_Index]]
+                    element := WechatConfig.RES_Dic_200DPI[res_ids[A_Index]]
             }
        }
        else
-          element := WechatConfig.RES_Dic_3000[res_id]
+          element := WechatConfig.RES_Dic_200DPI[res_id]
     }
     else
     {
@@ -90,13 +90,13 @@ findAndClickElementWithResDic(res_id,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:
             Loop % res_ids.MaxIndex()
             {
                 if (element)
-                    element .= WechatConfig.RES_Dic_1000[res_ids[A_Index]]
+                    element .= WechatConfig.RES_Dic_100DPI[res_ids[A_Index]]
                 else
-                    element := WechatConfig.RES_Dic_1000[res_ids[A_Index]]
+                    element := WechatConfig.RES_Dic_100DPI[res_ids[A_Index]]
             }
         }
        else
-         element := WechatConfig.RES_Dic_1000[res_id]
+         element := WechatConfig.RES_Dic_100DPI[res_id]
     }
 
     
@@ -106,7 +106,8 @@ findAndClickElementWithResDic(res_id,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:
         
         if (!resultArray)
         {
-            TrayTip 消息, 没有找到对应的操作元素： + %res_id%
+            msg := "没有找到对应的操作元素：" . res_id 
+            Tip(msg)
     
             return false
         }
@@ -436,7 +437,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
     if !findAndClickElementWithResDic("chat-record",0,0)
         return 
 
-    TrayTip 消息, 分析微信聊天记录开始
+    Tip("分析微信聊天记录开始")
     sleep 1000
     
     WinGet, active_id, ID, A
@@ -481,7 +482,10 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
      
      if !WinActive(Title) 
      {
-        WinActivate, Title
+
+        if WinExist(Title)
+            WinActivate
+           
         Sleep 1000
      }
 
@@ -532,6 +536,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
 
           break
         }
+        
        
         ; process text content, can use RegExMatch 
         if (text <> "")
@@ -575,6 +580,17 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
         {
          step := step - 10
         }
+        
+     }
+     
+     ;再检查一次是否打开了特殊文件窗口
+     if !WinActive(Title) 
+     {
+        WinGetTitle, TempTitle, A
+        
+        if (TempTitle != Title)
+            if WinExist(TempTitle) 
+                WinKill, %TempTitle%
      }
      
      ; check to end loop 
@@ -614,9 +630,13 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
       break
      }
      
+     
      if !WinActive(Title) 
      {
-        WinActivate, Title
+
+        if WinExist(Title)
+            WinActivate
+           
         Sleep 1000
      }
      
@@ -648,7 +668,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
             
             if (TempTitle <> Title)
             {
-              TrayTip 消息, TempTitle:%TempTitle% . Title: %Title%
+              ;TrayTip 消息, TempTitle:%TempTitle% . Title: %Title%
               
               waitTimes := 2000
 
@@ -730,8 +750,13 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
 
     totalCount:= saveResultToFile(chatContentsList,save_filepath)
     
-    WinKill, %Title%
-    Sleep 1000
+     if WinExist(Title)
+     {
+        ;WinKill
+        WinClose
+        ;MsgBox, kill it
+        Sleep 1000
+     }
 
     return totalCount
 }
@@ -775,4 +800,10 @@ saveResultToFile(result,save_filepath,isAppend:=false)
     
     return totalCount
     
+}
+
+Tip(message)
+{
+    if (WechatConfig.IS_DEBUG)
+        TrayTip 消息, %message%
 }
