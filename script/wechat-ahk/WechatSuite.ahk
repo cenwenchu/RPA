@@ -742,15 +742,13 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
          }
     }
 
-    Sleep 5000
+    Sleep 2000
 
     totalCount:= saveResultToFile(chatContentsList,save_filepath)
     
      if WinExist(Title)
      {
-        ;WinKill
         WinClose
-        ;MsgBox, kill it
         Sleep 1000
      }
 

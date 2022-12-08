@@ -125,130 +125,150 @@ return
 
 AnalysisWechatAddressBook:
 
-GuiControlGet, addressBookTypeChoice
-GuiControlGet, addressBookProcessStartPos
-GuiControlGet, addressBookProcessCount
+    GuiControlGet, addressBookTypeChoice
+    GuiControlGet, addressBookProcessStartPos
+    GuiControlGet, addressBookProcessCount
 
-if(!addressBookTypeChoice)
-{
-    MsgBox, 请选择分析通讯录的类型！
-    return
-}
+    if(!addressBookTypeChoice)
+    {
+        MsgBox, 请选择分析通讯录的类型！
+        return
+    }
 
-initWechatApp("address_book")  
+    initWechatApp("address_book")  
 
-if (findAndClickElementWithResDic("max",0,0))
-{
-   if (WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice] == "friend")
-   {
+    WinGetTitle, chatTitle, A
+
+    if (WinExist(chatTitle))
+        WinMaximize
+
+    if (WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice] == "friend")
+    {
         resultFile_addressBook := A_ScriptDir . "\微信通讯录结果文件_好友.txt" 
-   }
+    }
    
-   if (WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice] == "group")
-   {
+    if (WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice] == "group")
+    {
         resultFile_addressBook := A_ScriptDir . "\微信通讯录结果文件_群.txt"
-   }
-   
-   totalCount := ParseWechatAddressBook(WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice],resultFile_addressBook,addressBookProcessStartPos,addressBookProcessCount) 
-        
-   findAndClickElementWithResDic("recovery",0,0)
-   findAndClickElementWithResDic("close",0,0) 
-}
+    }
+       
+    totalCount := ParseWechatAddressBook(WechatConfig.ADDRESS_BOOK_TYPE[addressBookTypeChoice],resultFile_addressBook,addressBookProcessStartPos,addressBookProcessCount) 
 
-TempTip := "分析通讯录结束,符合结果 " . totalCount . " 条,已保存到:微信通讯录结果文件.txt"
+    if (WinExist(chatTitle))
+    {
+        WinActivate
+        WinRestore
+        WinMinimize   
+    }
 
-MsgBox, %TempTip%
+    TempTip := "分析通讯录结束,符合结果 " . totalCount . " 条,已保存到:微信通讯录结果文件.txt"
+
+    MsgBox, %TempTip%
 
 return
 
 
 AnalysisWechatMessage:
 
-GuiControlGet, chatId
-GuiControlGet, messageProcessCount
-GuiControlGet, messageKeyWords 
+    GuiControlGet, chatId
+    GuiControlGet, messageProcessCount
+    GuiControlGet, messageKeyWords 
 
-if(!chatId)
-{
-    MsgBox, 请输入需要自动化的好友或者群名称！
+    if(!chatId)
+    {
+        MsgBox, 请输入需要自动化的好友或者群名称！
+        return
+    }
+
+    if(!messageProcessCount)
+        messageProcessCount := 10
+        
+    if (!messageKeyWords)
+    {
+       messageKeyWords := ""
+    }
+       
+    if (messageKeyWords != "")
+        if(messageKeyWords == "手机号码")
+        {
+            messageKeyWords := "(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}"
+        }
+        else
+        {
+            messageKeyWords := ".*" . messageKeyWords . ".*"
+        }
+     
+    initWechatApp("chat")  
+
+    ;BlockInput, MouseMove 
+    ;BlockInput, Mouse
+
+    WinGetTitle, chatTitle, A
+
+    if (WinExist(chatTitle))
+        WinMaximize
+
+    totalCount := ParseWechatContent(chatId,messageKeyWords,resultFile,messageProcessCount) 
+
+    if (WinExist(chatTitle))
+    {
+        WinActivate
+        WinRestore
+        WinMinimize   
+    }
+
+    ;BlockInput, MouseMoveOff
+    ;BlockInput, Default
+       
+    TempTip := "分析聊天记录结束,符合结果 " . totalCount . " 条,已保存到:微信分析结果文件.txt"
+
+    MsgBox, %TempTip%
+
     return
-}
-
-if(!messageProcessCount)
-    messageProcessCount := 10
-    
-if (!messageKeyWords)
-{
-   messageKeyWords := ""
-}
-   
-if (messageKeyWords != "")
-    if(messageKeyWords == "手机号码")
-    {
-        messageKeyWords := "(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}"
-    }
-    else
-    {
-        messageKeyWords := ".*" . messageKeyWords . ".*"
-    }
- 
-initWechatApp("chat")  
-
-;BlockInput, MouseMove 
-;BlockInput, Mouse
-
-
-if (findAndClickElementWithResDic("max",0,0))
-{
-   totalCount := ParseWechatContent(chatId,messageKeyWords,resultFile,messageProcessCount) 
-   findAndClickElementWithResDic("recovery",0,0)
-   findAndClickElementWithResDic("close",0,0) 
-}
-
-;BlockInput, MouseMoveOff
-;BlockInput, Default
-   
-TempTip := "分析聊天记录结束,符合结果 " . totalCount . " 条,已保存到:微信分析结果文件.txt"
-
-MsgBox, %TempTip%
-
-return
 
 SendWechatMessage:
 
-GuiControlGet, chatId
-GuiControlGet, chatMessage 
-GuiControlGet, attachment
+    GuiControlGet, chatId
+    GuiControlGet, chatMessage 
+    GuiControlGet, attachment
 
-if(!chatId)
-{
-    MsgBox, 请输入需要自动化的好友或者群名称！
+    if(!chatId)
+    {
+        MsgBox, 请输入需要自动化的好友或者群名称！
+        return
+    }
+
+    if(!chatMessage)
+    {
+        MsgBox, 请输入需要发送的聊天内容！
+        return
+    }
+
+    initWechatApp("chat")
+
+    ;BlockInput, MouseMove
+    ;BlockInput, Mouse
+
+    WinGetTitle, chatTitle, A
+
+    if (WinExist(chatTitle))
+        WinMaximize
+
+    SendMessage(chatId,chatMessage,attachment) 
+
+    if (WinExist(chatTitle))
+    {
+        WinActivate
+        WinRestore
+        WinMinimize   
+    }
+
+    ;BlockInput, MouseMoveOff
+    ;BlockInput, Default
+        
+    MsgBox, 自动发消息结束  
+        
     return
-}
-
-if(!chatMessage)
-{
-    MsgBox, 请输入需要发送的聊天内容！
-    return
-}
-
-initWechatApp("chat")
-
-;BlockInput, MouseMove
-;BlockInput, Mouse
-
-findAndClickElementWithResDic("max",0,0) 
-SendMessage(chatId,chatMessage,attachment) 
-findAndClickElementWithResDic("recovery",0,0)
-sleep 300
-findAndClickElementWithResDic("close",0,0)
-
-;BlockInput, MouseMoveOff
-;BlockInput, Default
-    
-MsgBox, 自动发消息结束  
-    
-return
 
 
 GuiClose:  ; 用户关闭了窗口.
