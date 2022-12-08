@@ -109,10 +109,10 @@ findAndClickElementWithResDic(res_id,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:
             msg := "没有找到对应的操作元素：" . res_id 
             Tip(msg)
     
-            return false
+            return resultArray
         }
         else
-            return true
+            return resultArray
     }
     Else
     {
@@ -153,7 +153,8 @@ findAndClickElementV2(element,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:=0,y2:=
     {
         ;TrayTip 消息, 没有找到对应的操作元素： + %element%
     
-        return false
+        ;return false
+        return resultArray
     }
     else
     {
@@ -161,8 +162,34 @@ findAndClickElementV2(element,move_x,move_y,clickTimes:=1,x1:=0,y1:=0,x2:=0,y2:=
         FindText().Click(X+move_x, Y+move_y, clickTimes)
         sleep 1000
         
-        return true
+        ;return true
+        return resultArray
     }
+}
+
+findAndClickElementFromArray(elements,element_id,move_x,move_y,clickTimes:=1)
+{
+    if (!elements)
+        return false
+        
+        
+    for key, value in elements 
+    { 
+        if (value.id == element_id)
+        {
+            ;FindText().MouseTip(value.x, value.y) 
+            FindText().Click(value.x+move_x, value.y+move_y, clickTimes)
+
+ 
+            return true
+        }
+        
+    }
+    
+    
+    return false
+    
+    
 }
 
 ; 定位到对应微信组件
@@ -270,12 +297,15 @@ ParseWechatAddressBook(type,save_filepath,startPos:= 0,max_process_line_count:= 
         
         while(remainLineCount > 0)
         {
+            
+            ;集中一次性获取多次使用
+            sendMessageElement := findAndClickElementWithResDic("sendMessage",0,0,0)
                
             isContactOrGroupCard := false
             
             if (isContact == 0 && isGroup == 0)
             {
-                if (findAndClickElementWithResDic("sendMessage",0,0,0))
+                if(findAndClickElementFromArray(sendMessageElement,"sendMessage",0,0,0))
                     isContactOrGroupCard := true
             }
             else
@@ -285,19 +315,26 @@ ParseWechatAddressBook(type,save_filepath,startPos:= 0,max_process_line_count:= 
 
             if (isContactOrGroupCard)
             {
+                
                 ;联系人卡片
                 if (findAndClickElementWithResDic("wechatId",70*WechatConfig.SCALING,0,2))
                 {
+                    
                     if (type == "friend")
                     {
                         wechatId := copyFromClipboard()
-                        findAndClickElementWithResDic("area",50*WechatConfig.SCALING,0,2)
+                        
+                        ;集中一次性获取对应
+                        allElements := findAndClickElementWithResDic("area,wechatIcon-M,wechatIcon-F,tag",0,0,0)
+                        
+                        findAndClickElementFromArray(allElements,"area",50*WechatConfig.SCALING,0,2)
                         area := copyFromClipboard()
                         
-                        if(findAndClickElementWithResDic("wechatIcon-M,wechatIcon-F",-50*WechatConfig.SCALING,0,2,0,0,0,0,0,0.1))
+                        if(findAndClickElementFromArray(allElements,"wechatIcon-M",-50*WechatConfig.SCALING,0,2)
+                        || findAndClickElementFromArray(allElements,"wechatIcon-F",-50*WechatConfig.SCALING,0,2))
                             nick := copyFromClipboard()
 
-                        if(findAndClickElementWithResDic("tag",180*WechatConfig.SCALING,0,2))
+                        if(findAndClickElementFromArray(allElements,"tag",180*WechatConfig.SCALING,0,2))
                             tag := copyFromClipboard()
                            
                         
@@ -331,7 +368,7 @@ ParseWechatAddressBook(type,save_filepath,startPos:= 0,max_process_line_count:= 
                     ;群卡片
                     if (type == "group")
                     {
-                        if(findAndClickElementWithResDic("sendMessage",0,0))
+                        if(findAndClickElementFromArray(sendMessageElement,"sendMessage",0,0))
                         {
                             if (findAndClickElementWithResDic("chat-more",0,0))
                             {

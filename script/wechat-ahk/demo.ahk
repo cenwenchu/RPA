@@ -21,11 +21,20 @@ Tip(reg_rule)
 
 Sleep 3000
 
-;result := findAndClickElementWithResDic("address-book-not-select,address-book-select",0,0)  
+result := findAndClickElementWithResDic("sendMessage,wechatId,area,wechatIcon-M,wechatIcon-F,tag",0,0,0)
 
-;result := findAndClickElementWithResDic("chat-not-select,chat-select",0,0)  
+;result := findAndClickElementWithResDic("sendMessage,wechatId,area,wechatIcon-M,wechatIcon-F,tag",0,0,0,0,0,0,0,0,0.1)
 
-MsgBox, %result%
+
+for key, value in result { 
+    FindText().MouseTip(value.x, value.y) 
+    MsgBox, % "Result number " key " is located at X" value[1] " Y" value[2] " and it has a width of " value[3] " and a height of " value[4] ". Additionally it has a comment text of " value.id 
+    
+    if (value.id == "area")
+        MsgBox, Here we found the "area" image.
+}
+
+findAndClickElementFromArray(result,"wechatId",70*WechatConfig.SCALING,0,2)
 
 Sleep 30000
 ;ParseWechatAddressBook("friend",resultFile,13,10)
