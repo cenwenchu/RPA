@@ -589,7 +589,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
           isfound := true
        
          ; skip common line readin
-         if (pre_found_text != "" and pre_found_text == text and A_Index == 0)
+         if (pre_found_text != "" and pre_found_text == text and A_Index == pre_found_index)
          {
            skip_record := true
          }
@@ -728,7 +728,7 @@ ParseWechatContent(chatid,reg_rule,save_filepath,max_process_line_count)
                 {
                
                      ; skip common line readin
-                     if (pre_found_text != "" and pre_found_text == text)
+                     if (pre_found_text != "" and pre_found_text == text and A_Index == pre_found_index)
                      {
                        skip_record := true
                      }
