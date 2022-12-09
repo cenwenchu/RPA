@@ -1,6 +1,6 @@
 ﻿class WechatConfig {
     
-    static IS_DEBUG := true
+    static IS_DEBUG := false
     static SCALING := round(A_ScreenWidth/3024,2)
 
     static ADDRESS_BOOK_TYPE := {"联系人":"friend","群":"group","标签":"tag"}
